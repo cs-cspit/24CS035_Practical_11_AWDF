@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # ── React Frontend Service (Vite, Built & Served on Port 5173) ──
+  frontend:
+    build:
+      context: ./task-manager-frontend
+      dockerfile: Dockerfile
+    container_name: task-manager-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE=http://localhost:5000
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # ── Node.js / Express Backend Service (Port 5000) ──
+  backend:
+    build:
+      context: ./TaskManagerAPI
+      dockerfile: Dockerfile
+    container_name: task-manager-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - MONGODB_URI=mongodb://mongodb:27017/taskdb
+      - JWT_SECRET=supersecret_jwt_key_practical_11_charusat_24cs034
+    depends_on:
+      - mongodb
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # ── MongoDB Official Database Service (Port 27017) ──
+  mongodb:
+    image: mongo:latest
+    container_name: task-manager-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - app-network
+    restart: unless-stopped
+
+# ── Custom Bridge Network for Inter-Container Communication ──
+networks:
+  app-network:
+    driver: bridge
+
+# ── Named Volume for Persistent Task Storage Across Restarts ──
+volumes:
+  mongo-data:
+    driver: local
